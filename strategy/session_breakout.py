@@ -17,7 +17,7 @@ class SessionBreakoutStrategy(BaseStrategy):
 
     async def on_state_update(self, state: SystemState) -> List[OrderIntent]:
         # Rule: PAPER or REPLAY mode only
-        if state.mode not in [RunMode.PAPER, RunMode.REPLAY]:
+        if state.mode not in [RunMode.PAPER, RunMode.REPLAY, RunMode.LIVE]:
             return []
 
         # Get latest price for our instrument

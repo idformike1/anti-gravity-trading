@@ -10,7 +10,7 @@ class UpstoxMarketData:
     WebSocket Ingester for Upstox Feed.
     Normalizes data and updates state.
     """
-    WS_URL = "wss://api.upstox.com/v2/feed/market-data-feed"
+    WS_URL = "wss://api.upstox.com/v3/feed/market-data-feed"
 
     def __init__(self, state_manager, access_token: str):
         self._state_manager = state_manager
@@ -25,7 +25,7 @@ class UpstoxMarketData:
         
         async for websocket in websockets.connect(
             self.WS_URL,
-            extra_headers={"Authorization": f"Bearer {self._access_token}"}
+            additional_headers={"Authorization": f"Bearer {self._access_token}"}
         ):
             try:
                 self._ws = websocket

@@ -111,6 +111,14 @@ class UpstoxBroker(BaseBroker):
     async def get_user_profile(self) -> dict:
         return await self._request("GET", "/user/profile")
 
+    async def get_market_quote(self, instruments: List[str]) -> dict:
+        symbols = ",".join(instruments)
+        return await self._request("GET", f"/market-quote/quotes?symbol={symbols}")
+
+    async def get_ltp(self, instruments: List[str]) -> dict:
+        symbols = ",".join(instruments)
+        return await self._request("GET", f"/market-quote/ltp?symbol={symbols}")
+
     async def get_orders(self) -> List[BrokerOrder]:
         response = await self._request("GET", "/order/retrieve-all")
         orders = []

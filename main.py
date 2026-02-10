@@ -1,6 +1,21 @@
 import asyncio
 import os
 import uvicorn
+
+# Manual .env loader
+def load_env():
+    env_path = os.path.join(os.path.dirname(__file__), ".env")
+    if os.path.exists(env_path):
+        with open(env_path, "r") as f:
+            for line in f:
+                line = line.strip()
+                if line and not line.startswith("#") and "=" in line:
+                    key, value = line.split("=", 1)
+                    os.environ[key.strip()] = value.strip().strip('"').strip("'")
+
+load_env()
+
+from datetime import datetime
 from core.state import StateManager
 from core.events import EventBus, EventType
 from core.types import RunMode, Instrument
@@ -8,6 +23,7 @@ from brokers.paper_adapter import PaperBroker
 from brokers.upstox_adapter import UpstoxBroker
 from risk.engine import RiskEngine
 from risk.rules import MaxLossRule, MaxQuantityRule, KillSwitchRule, DuplicateOrderRule, LiveReadOnlyRule
+from market_data.upstox import UpstoxMarketData
 from execution.orchestrator import ExecutionOrchestrator
 from strategy.engine import StrategyEngine
 from strategy.session_breakout import SessionBreakoutStrategy
@@ -33,8 +49,13 @@ class AntiGravitySystem:
                 redirect_uri=os.getenv("UPSTOX_REDIRECT", ""),
                 access_token=os.getenv("UPSTOX_ACCESS_TOKEN", "")
             )
+            self.market_data_provider = UpstoxMarketData(
+                self.state_manager, 
+                os.getenv("UPSTOX_ACCESS_TOKEN", "")
+            )
         else:
             self.broker = PaperBroker(self.state_manager)
+            self.market_data_provider = None
 
         # 2. Risk Engine
         self.risk_engine = RiskEngine(self.state_manager, self.event_bus)
@@ -46,7 +67,7 @@ class AntiGravitySystem:
         if mode == RunMode.LIVE:
             self.risk_engine.add_rule(LiveReadOnlyRule())
             asyncio.create_task(self.state_manager.add_audit_log({
-                "action": "LIVE_TRADING_PAUSED_AWAITING_MARKET_FEED"
+                "action": "LIVE_TRADING_PAUSED_REESTABLISHED_AFTER_FIRST_TRADE"
             }))
         
         # 3. Execution Orchestrator
@@ -99,7 +120,8 @@ class AntiGravitySystem:
         print(f"Anti-Gravity System started in {self.state_manager.state.mode} mode.")
 
 async def main():
-    system = AntiGravitySystem(mode=RunMode.PAPER)
+    mode = RunMode.LIVE if os.getenv("RUN_MODE") == "LIVE" else RunMode.PAPER
+    system = AntiGravitySystem(mode=mode)
     
     # Inject into API router for control
     router.state_manager = system.state_manager
