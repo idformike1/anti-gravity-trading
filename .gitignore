@@ -1,0 +1,16 @@
+.env
+*.env
+token.json
+*.log
+__pycache__/
+*.pyc
+.DS_Store
+replay_artifacts/
+*.webp
+*.png
+verify_live_readonly.py
+kill_switch_stress_test.py
+daily_loss_simulation.py
+repro_replay.py
+replay_out.log
+.gemini/
