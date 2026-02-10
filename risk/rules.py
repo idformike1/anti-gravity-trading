@@ -44,3 +44,7 @@ class DuplicateOrderRule(RiskRule):
                 existing.intent_id != intent.intent_id):
                 return False, "Potential duplicate order detected"
         return True, None
+
+class LiveReadOnlyRule(RiskRule):
+    def validate(self, intent: OrderIntent, state: SystemState) -> Tuple[bool, Optional[str]]:
+        return False, "LIVE_READ_ONLY_MODE_ACTIVE"

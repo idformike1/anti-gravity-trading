@@ -7,7 +7,7 @@ from core.types import RunMode, Instrument
 from brokers.paper_adapter import PaperBroker
 from brokers.upstox_adapter import UpstoxBroker
 from risk.engine import RiskEngine
-from risk.rules import MaxLossRule, MaxQuantityRule, KillSwitchRule, DuplicateOrderRule
+from risk.rules import MaxLossRule, MaxQuantityRule, KillSwitchRule, DuplicateOrderRule, LiveReadOnlyRule
 from execution.orchestrator import ExecutionOrchestrator
 from strategy.engine import StrategyEngine
 from strategy.session_breakout import SessionBreakoutStrategy
@@ -42,7 +42,13 @@ class AntiGravitySystem:
         self.risk_engine.add_rule(MaxLossRule(max_loss=10000.0))
         self.risk_engine.add_rule(MaxQuantityRule(max_qty=500))
         self.risk_engine.add_rule(DuplicateOrderRule())
-
+        
+        if mode == RunMode.LIVE:
+            self.risk_engine.add_rule(LiveReadOnlyRule())
+            asyncio.create_task(self.state_manager.add_audit_log({
+                "action": "LIVE_TRADING_PAUSED_AWAITING_MARKET_FEED"
+            }))
+        
         # 3. Execution Orchestrator
         self.orchestrator = ExecutionOrchestrator(self.state_manager, self.event_bus, self.broker)
 
